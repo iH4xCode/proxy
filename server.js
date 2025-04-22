@@ -1,7 +1,7 @@
-const express = require('express');
-const axios = require('axios');
-const HttpsProxyAgent = require('https-proxy-agent');
-const cors = require('cors');
+import express from 'express';
+import axios from 'axios';
+import HttpsProxyAgent from 'https-proxy-agent';
+import cors from 'cors';
 
 const app = express();
 app.use(express.json());
@@ -9,7 +9,6 @@ app.use(cors());
 
 let cachedProxies = [];
 
-// Auto-fetch proxies from GitHub (updated every 10 mins)
 async function fetchProxies() {
   try {
     const res = await axios.get('https://raw.githubusercontent.com/proxifly/free-proxy-list/main/proxies/protocols/http/data.txt');
@@ -20,7 +19,6 @@ async function fetchProxies() {
   }
 }
 
-// Fetch proxies every 10 minutes
 fetchProxies();
 setInterval(fetchProxies, 10 * 60 * 1000);
 
@@ -46,9 +44,10 @@ app.post('/proxy', async (req, res) => {
   } catch (err) {
     res.status(500).send({
       error: err.message,
-      proxyUsed: err.config?.httpsAgent?.proxy?.host || 'N/A',
+      proxyUsed: randomProxy,
     });
   }
 });
 
-app.listen(3000, () => console.log('🚀 Proxy API running on http://localhost:3000'));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`🚀 Proxy API running on port ${PORT}`));
