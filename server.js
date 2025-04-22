@@ -5,8 +5,16 @@ import cors from 'cors';
 
 const app = express();
 app.use(express.json());
-app.use(cors());
 
+// ✅ CORS setup for browser fetch/Tampermonkey
+const corsOptions = {
+  origin: '*', // You can restrict to a specific domain later
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type']
+};
+app.use(cors(corsOptions));
+
+// 🌐 Load free HTTP proxies from GitHub
 let cachedProxies = [];
 
 async function fetchProxies() {
@@ -19,14 +27,18 @@ async function fetchProxies() {
   }
 }
 
+// Fetch proxies on start and every 10 minutes
 fetchProxies();
 setInterval(fetchProxies, 10 * 60 * 1000);
 
+// 🔁 Proxy endpoint
 app.post('/proxy', async (req, res) => {
   const { url, method = 'GET', headers = {}, data = null } = req.body;
 
   try {
-    if (cachedProxies.length === 0) return res.status(503).send({ error: 'No proxies loaded yet.' });
+    if (cachedProxies.length === 0) {
+      return res.status(503).send({ error: 'No proxies loaded yet.' });
+    }
 
     const randomProxy = cachedProxies[Math.floor(Math.random() * cachedProxies.length)];
     const agent = new HttpsProxyAgent(`http://${randomProxy}`);
@@ -44,10 +56,11 @@ app.post('/proxy', async (req, res) => {
   } catch (err) {
     res.status(500).send({
       error: err.message,
-      proxyUsed: randomProxy,
+      proxyUsed: randomProxy
     });
   }
 });
 
+// 🚀 Start server on Render.com port
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Proxy API running on port ${PORT}`));
+app.listen(PORT, () => console.log(`🌀 Proxy server running at http://localhost:${PORT}`));
